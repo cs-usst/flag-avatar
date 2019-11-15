@@ -1,0 +1,203 @@
+<!DOCTYPE  html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width,maximum-scale=1.0,minimum-scale=1.0'>
+  <meta http-equiv='X-UA-Compatible' content='ie=edge'>
+  <title>Flag On Avatar</title>
+  <style>
+    body {
+      font-size: 20px;
+      text-align: center;
+      margin: 0;
+    }
+    label {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      font-size: 10px;
+    }
+    .header {
+      color: #108757;
+      height: 3rem;
+    }
+    #cvs {
+      display: none;
+      margin: 0 auto;
+    }
+    .canvas-container {
+      margin: 0 auto;
+    }
+    .hide, #exportBtn {
+      display: none;
+    }
+    .body {
+      margin: 4rem auto 3rem;
+      height: 10rem;
+      width: 10rem;
+      border: solid 1px #aaa;
+      box-shadow: 0 0 5px #aaa;
+      border-radius: 1rem;
+      line-height: 10rem;
+      position: relative;
+    }
+    #export {
+      display: none;
+      margin: 0 auto;
+      width: 250px;
+      height: 250px;
+    }
+    .footer {
+      display: flex;
+      justify-content: space-around;
+    }
+    button {
+      font-size: 18px;
+      color: #fff;
+      padding: 0 30px;
+      height: 2.3rem;
+      background: #8fd16f;
+      border: 0;
+      border-radius: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class='header'>
+    <h2>Attach your favorite flag to your avatar</h2>
+  </div>
+    <input id='upload' type='file'>
+    <input id='flagUnicode' type='text'>
+    <button id='submit' onClick='viewer()'>Submit</button>
+  <img id='export' alt='Avatar' src='' crossorigin />
+  <canvas id='cvs'></canvas>
+  <p id='tip' style='opacity: 0'>You can adjust the size and location of the frame</p>
+  <div class='footer'>
+    <button id='change' onClick='changeHat()' style='display: none;'>Change my style</button>
+    <button id='exportBtn' onClick='exportFunc()'>Generate</button>
+  </div>
+  <label>Based on <a href='https://github.com/reshuige/touxiang'>touxiang</a></label>
+  <div style='display: none'>
+    <img id='img' src='' alt='' />
+    <img class='hide' id='hat0' src='./hat0.png' />
+    <img class='hide' id='hat1' src='./hat1.png' />
+  </div>
+<script src="https://cdn.bootcss.com/fabric.js/2.0.0-rc.3/fabric.min.js"></script>
+<script>
+  var cvs=document.getElementById("cvs");
+  var ctx=cvs.getContext("2d");
+  var exportImage=document.getElementById("export");
+  exportImage.setAttribute('crossorigin', 'anonymous');
+  var img=document.getElementById("img");
+  var hat="hat0";
+  var canvasFabric;
+  var hatInstance;
+  var imgGroup;
+  var imgURL;
+  var flagImg;
+  var flagUnicode;
+  var flagScale;
+  var screenWidth=window.screen.width<500?window.screen.width:300;
+  function viewer(){
+  var file=document.getElementById("upload").files[0];
+  flagUnicode=document.getElementById("flagUnicode").value;
+  flagInfo();
+  getImgURL(flagUnicode);
+  console.log(file);
+  var reader=new FileReader;
+  if(file){reader.readAsDataURL(file);
+    reader.onload=function(e){
+        img.src=reader.result;
+        img.onload=function(){img2Cvs(img)}
+        changeHat();
+        }
+    }else{img.src=""}
+  }
+  function flagInfo(){
+    if (hat == "hat1"){
+        flagIdentifier = 'JoyPixels';
+        flagx = 772;
+        flagy = 811;
+        flagScale = 2.7;
+    }
+    if (hat == "hat0"){
+        flagIdentifier = 'WhatsApp';
+        flagx = 746;
+        flagy = 741;
+        flagScale = 3.1;
+    }
+  }
+  function img2Cvs(img){
+    cvs.width=img.width;
+    cvs.height=img.height;
+    cvs.style.display="block";
+    canvasFabric=new fabric.Canvas("cvs",{width:screenWidth,height:screenWidth,backgroundImage:new fabric.Image(img,{scaleX:screenWidth/img.width,scaleY:screenWidth/img.height})});
+    changeHat();
+    document.getElementById("flagUnicode").style.display="none";
+    document.getElementById("submit").style.display="none";
+    document.getElementById("upload").style.display="none";
+    document.getElementById("change").style.display="block";
+    document.getElementById("exportBtn").style.display="block";
+    document.getElementById("tip").style.opacity=1
+    }
+    function changeHat(){
+    document.getElementById(hat).style.display="none";
+    var hats=document.getElementsByClassName("hide");
+    hat="hat"+(+hat.replace("hat","")+1)%hats.length;
+    flagInfo();
+    var hatImage=document.getElementById(hat);
+    hatImage.style.display="block";
+    canvasFabric.remove(imgGroup);
+    hatInstance=new fabric.Image(hatImage,{top:0,left:0,scaleX:screenWidth/hatImage.width,scaleY:screenWidth/hatImage.height,cornerColor:"#0b3a42",cornerStrokeColor:"#fff",cornerStyle:"circle",transparentCorners:false,rotatingPointOffset:30});
+    hatInstance.setControlVisible("bl",false);
+    hatInstance.setControlVisible("tr",false);
+    hatInstance.setControlVisible("tl",false);
+    hatInstance.setControlVisible("mr",false);
+    hatInstance.setControlVisible("mt",false);
+
+    getImgURL(flagUnicode);
+    fabric.Image.fromURL(imgURL, function(myImg) {
+     flagImg = myImg.set({ left: flagx/hatImage.width*screenWidth, top: flagy/hatImage.width*screenWidth}).scale(flagScale/hatImage.width*screenWidth);
+    });
+    imgGroup = new fabric.Group([ hatInstance, flagImg ], { left: 0, top: 0 });
+    canvasFabric.add(imgGroup);
+    }
+  function exportFunc(){
+    document.getElementsByClassName("canvas-container")[0].style.display="none";
+    document.getElementById("exportBtn").style.display="none";
+    document.getElementById("tip").innerHTML="Long press to save";
+    document.getElementById("change").style.display="none";
+    cvs.style.display="none";
+    exportImage.style.display="block";
+    exportImage.src=canvasFabric.toDataURL({width:screenWidth,height:screenWidth})
+    }
+function getHTML( url, callback ) {
+	if ( !window.XMLHttpRequest ) return;
+	var xhr = new XMLHttpRequest();
+	xhr.onload = function() {
+		if ( callback && typeof( callback ) === 'function' ) {
+			callback( this.responseXML );
+		}
+	}
+	xhr.open( 'GET', url );
+	xhr.responseType = 'document';
+	xhr.send();
+};
+function getImgURL(flagUnicode){
+getHTML( 'https://cors-anywhere.herokuapp.com/https://emojipedia.org/'+flagUnicode, function (response) {
+    for (i = 0; i < response.documentElement.getElementsByClassName('vendor-info').length; i++) {
+        try{
+            if (response.documentElement.getElementsByClassName('vendor-info')[i].getElementsByTagName('h2')[0].getElementsByTagName('a')[0].innerHTML == flagIdentifier){
+                imgURL = response.documentElement.getElementsByClassName('vendor-image')[i].getElementsByTagName('img')[0].src;
+            }
+        }
+        catch(TypeError){
+            //pass
+        }
+    } 
+    
+});
+}
+</script>
+</body>
+</html>
